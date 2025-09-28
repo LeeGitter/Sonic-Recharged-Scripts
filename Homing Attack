@@ -1,0 +1,50 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
+
+local burstAnim = Instance.new("Animation")
+burstAnim.AnimationId = "rbxassetid://13844043149"
+local burstTrack = humanoid:LoadAnimation(burstAnim)
+
+local canBurst = true
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.T and canBurst then
+        local isGrounded = humanoid.FloorMaterial ~= Enum.Material.Air
+        if isGrounded then return end
+
+        canBurst = false
+        burstTrack:Play()
+        burstTrack:AdjustSpeed(2)
+
+        -- Flatten camera direction (no vertical movement)
+        local cam = workspace.CurrentCamera
+        local flatDirection = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z).Unit
+
+        -- Create burst velocity
+        local velocity = Instance.new("BodyVelocity")
+        velocity.Velocity = flatDirection * 120
+        velocity.MaxForce = Vector3.new(1e5, 1e5, 1e5) -- ✅ Y force enabled
+        velocity.P = 1e5
+        velocity.Name = "TDashForce"
+        velocity.Parent = root
+
+        -- Suspend gravity
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+
+        task.delay(0.2, function()
+            velocity:Destroy()
+            humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+        end)
+
+        task.delay(0.5, function()
+            burstTrack:Stop()
+            canBurst = true
+        end)
+    end
+end)
