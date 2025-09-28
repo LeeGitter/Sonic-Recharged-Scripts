@@ -4,21 +4,21 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/LeeGitter/Sonic-Recha
 loadstring(game:HttpGet("https://raw.githubusercontent.com/LeeGitter/Sonic-Recharged-Scripts/refs/heads/main/Boost", true))()
 
 -- Afterimage system
-local user = workspace:FindFirstChild("currentuser")
+local userModel = workspace:FindFirstChild("GutterJason11")
 local movementThreshold = 5 -- seconds
 local afterimageInterval = 0.5
 local afterimageDuration = 1
 local transparency = 0.5
 local color = Color3.fromRGB(0, 170, 255)
 
-local lastPosition = user and user.PrimaryPart and user.PrimaryPart.Position or nil
+local lastPosition = userModel and userModel.PrimaryPart and userModel.PrimaryPart.Position or nil
 local movingTime = 0
 local lastAfterimage = 0
 
 game:GetService("RunService").Heartbeat:Connect(function(dt)
-    if not user or not user.PrimaryPart then return end
+    if not userModel or not userModel.PrimaryPart then return end
 
-    local currentPosition = user.PrimaryPart.Position
+    local currentPosition = userModel.PrimaryPart.Position
     local velocity = (currentPosition - lastPosition).magnitude
     lastPosition = currentPosition
 
@@ -33,7 +33,7 @@ game:GetService("RunService").Heartbeat:Connect(function(dt)
         if lastAfterimage >= afterimageInterval then
             lastAfterimage = 0
 
-            local clone = user:Clone()
+            local clone = userModel:Clone()
             clone.Name = "Afterimage"
             for _, part in ipairs(clone:GetDescendants()) do
                 if part:IsA("BasePart") then
@@ -45,8 +45,8 @@ game:GetService("RunService").Heartbeat:Connect(function(dt)
                     part.Transparency = transparency
                 end
             end
+            clone:SetPrimaryPartCFrame(userModel.PrimaryPart.CFrame)
             clone.Parent = workspace
-            clone:SetPrimaryPartCFrame(user.PrimaryPart.CFrame)
 
             task.delay(afterimageDuration, function()
                 if clone then clone:Destroy() end
