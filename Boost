@@ -1,0 +1,58 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
+
+-- Animation
+local dashAnim = Instance.new("Animation")
+dashAnim.AnimationId = "rbxassetid://93680187964742"
+local dashTrack = humanoid:LoadAnimation(dashAnim)
+
+local holdingR = false
+local dashSpeed = 80
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.R then
+        holdingR = true
+        dashTrack:Play()
+        dashTrack:AdjustSpeed(2)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+    if input.KeyCode == Enum.KeyCode.R then
+        holdingR = false
+        dashTrack:Stop()
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if holdingR then
+        local cam = workspace.CurrentCamera
+        local moveDir = humanoid.MoveDirection
+
+        -- Flatten camera and movement vectors
+        local flatLook = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z).Unit
+        local flatMove = Vector3.new(moveDir.X, 0, moveDir.Z).Unit
+        local steer = (flatLook + flatMove).Unit
+
+        local offset = steer * dashSpeed * dt
+        local rayOrigin = root.Position
+        local rayDirection = offset
+
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterDescendantsInstances = {character}
+        raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+
+        local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+
+        if not result then
+            root.CFrame = root.CFrame + offset
+        end
+    end
+end)
