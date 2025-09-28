@@ -1,0 +1,56 @@
+-- Load Sonic Recharged scripts
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LeeGitter/Sonic-Recharged-Scripts/refs/heads/main/Homing%20Attack", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LeeGitter/Sonic-Recharged-Scripts/refs/heads/main/Light%20Speed%20Dash", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LeeGitter/Sonic-Recharged-Scripts/refs/heads/main/Boost", true))()
+
+-- Afterimage system
+local user = workspace:FindFirstChild("currentuser")
+local movementThreshold = 5 -- seconds
+local afterimageInterval = 0.5
+local afterimageDuration = 1
+local transparency = 0.5
+local color = Color3.fromRGB(0, 170, 255)
+
+local lastPosition = user and user.PrimaryPart and user.PrimaryPart.Position or nil
+local movingTime = 0
+local lastAfterimage = 0
+
+game:GetService("RunService").Heartbeat:Connect(function(dt)
+    if not user or not user.PrimaryPart then return end
+
+    local currentPosition = user.PrimaryPart.Position
+    local velocity = (currentPosition - lastPosition).magnitude
+    lastPosition = currentPosition
+
+    if velocity > 0.1 then
+        movingTime += dt
+    else
+        movingTime = 0
+    end
+
+    if movingTime >= movementThreshold then
+        lastAfterimage += dt
+        if lastAfterimage >= afterimageInterval then
+            lastAfterimage = 0
+
+            local clone = user:Clone()
+            clone.Name = "Afterimage"
+            for _, part in ipairs(clone:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Anchored = true
+                    part.CanCollide = false
+                    part.Transparency = transparency
+                    part.Color = color
+                elseif part:IsA("Decal") then
+                    part.Transparency = transparency
+                end
+            end
+            clone.Parent = workspace
+            clone:SetPrimaryPartCFrame(user.PrimaryPart.CFrame)
+
+            task.delay(afterimageDuration, function()
+                if clone then clone:Destroy() end
+            end)
+        end
+    end
+end)
