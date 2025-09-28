@@ -1,0 +1,80 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
+
+local burstAnim = Instance.new("Animation")
+burstAnim.AnimationId = "rbxassetid://13844043149"
+local burstTrack = humanoid:LoadAnimation(burstAnim)
+
+local isDashingToRing = false
+local ringFolder = workspace:WaitForChild("Rings")
+
+local function getModelPosition(model)
+    if model.PrimaryPart then return model.PrimaryPart.Position end
+    for _, child in ipairs(model:GetChildren()) do
+        if child:IsA("BasePart") then return child.Position end
+    end
+    return nil
+end
+
+local function hasVisibleImage(model)
+    for _, gui in model:GetDescendants() do
+        if gui:IsA("ImageLabel") and gui.ImageTransparency == 0 then
+            return true
+        end
+    end
+    return false
+end
+
+local function getNearbyRings(origin, visited)
+    local nearby = {}
+    for _, obj in ipairs(ringFolder:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == "Ring" and not table.find(visited, obj) then
+            if hasVisibleImage(obj) then
+                local pos = getModelPosition(obj)
+                if pos and (pos - origin).Magnitude <= 15 then -- 🔧 expanded range
+                    table.insert(nearby, obj)
+                end
+            end
+        end
+    end
+    return nearby
+end
+
+local function startRingDashChain(startModel)
+    isDashingToRing = true
+    burstTrack:Play()
+    burstTrack:AdjustSpeed(2)
+
+    local visited = {}
+    local current = startModel
+
+    while current and not table.find(visited, current) do
+        table.insert(visited, current)
+        local pos = getModelPosition(current)
+        if not pos then break end
+
+        root.CFrame = CFrame.new(pos)
+        task.wait(0.01)
+
+        local nearby = getNearbyRings(pos, visited)
+        current = nearby[1]
+    end
+
+    burstTrack:Stop()
+    isDashingToRing = false
+end
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Y and not isDashingToRing then
+        local nearby = getNearbyRings(root.Position, {})
+        if #nearby > 0 then
+            startRingDashChain(nearby[1])
+        end
+    end
+end)
